@@ -135,9 +135,23 @@
     <None Include="index.frag" />
     <None Include="index.vert" />
     <None Include="packages.config" />
+    <None Include="panel.frag" />
+    <None Include="panel.vert" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="C:\Users\Korisnik\Downloads\name.png" />
+    <Image Include="Resources\-1.png" />
+    <Image Include="Resources\0.png" />
+    <Image Include="Resources\1.png" />
+    <Image Include="Resources\2.png" />
+    <Image Include="Resources\3.png" />
+    <Image Include="Resources\4.png" />
+    <Image Include="Resources\5.png" />
+    <Image Include="Resources\6.png" />
+    <Image Include="Resources\close.png" />
+    <Image Include="Resources\name.png" />
+    <Image Include="Resources\open.png" />
+    <Image Include="Resources\stop.jpg" />
+    <Image Include="Resources\vent.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

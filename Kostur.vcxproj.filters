@@ -38,9 +38,51 @@
     <None Include="index.vert">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="panel.vert">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="panel.frag">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Image Include="C:\Users\Korisnik\Downloads\name.png">
+    <Image Include="Resources\0.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\-1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\2.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\3.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\4.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\close.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\name.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\open.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\stop.jpg">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\vent.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\1.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\6.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\5.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>
