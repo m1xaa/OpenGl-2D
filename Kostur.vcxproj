@@ -132,7 +132,12 @@
     <ClInclude Include="Header\Util.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="index.frag" />
+    <None Include="index.vert" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\Korisnik\Downloads\name.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

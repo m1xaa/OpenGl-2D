@@ -32,5 +32,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="index.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="index.vert">
+      <Filter>Source Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="C:\Users\Korisnik\Downloads\name.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

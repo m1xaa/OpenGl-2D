@@ -3,11 +3,56 @@
 
 #include "../Header/Util.h"
 
-// Main fajl funkcija sa osnovnim komponentama OpenGL programa
 
-// Projekat je dozvoljeno pisati počevši od ovog kostura
-// Toplo se preporučuje razdvajanje koda po fajlovima (i eventualno potfolderima) !!!
-// Srećan rad!
+unsigned int indexTexture;
+
+void preprocessTexture(unsigned& texture, const char* filepath) {
+    texture = loadImageToTexture(filepath); 
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT); 
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void formVAOs(float* verticesRect, size_t rectSize, unsigned int& VAOrect) {
+
+    unsigned int VBOrect;
+    glGenVertexArrays(1, &VAOrect);
+    glGenBuffers(1, &VBOrect);
+
+    glBindVertexArray(VAOrect);
+    glBindBuffer(GL_ARRAY_BUFFER, VBOrect);
+    glBufferData(GL_ARRAY_BUFFER, rectSize, verticesRect, GL_STATIC_DRAW);
+
+    // Atribut 0 (pozicija):
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // Atribut 1 (boja):
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+}
+
+void drawRect(unsigned int rectShader, unsigned int VAOrect) {
+    glUseProgram(rectShader); 
+    glBindVertexArray(VAOrect);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4); 
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
+        glfwSetWindowShouldClose(window, true);
+    }
+}
+
+
 int main()
 {
     glfwInit();
@@ -15,7 +60,17 @@ int main()
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 800, "Kostur", NULL, NULL);
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    GLFWwindow* window = glfwCreateWindow(
+        mode->width,
+        mode->height,
+        "Kostur",
+        monitor,   
+        NULL
+    );
+
     if (window == NULL) return endProgram("Prozor nije uspeo da se kreira.");
     glfwMakeContextCurrent(window);
 
@@ -24,11 +79,39 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+    unsigned int indexShader = createShader("index.vert", "index.frag");
+
+
+    float verticesRect[] = {
+    -1.0f,  1.0f, 0.0f, 1.0f,  
+    -1.0f,  0.6f, 0.0f, 0.0f,   
+    -0.6f,  0.6f, 1.0f, 0.0f,   
+    -0.6f,  1.0f, 1.0f, 1.0f
+    };
+
+
+    unsigned int VAOrect;
+    formVAOs(verticesRect, sizeof(verticesRect), VAOrect);
+
     glClearColor(0.2f, 0.8f, 0.6f, 1.0f);
+
+    preprocessTexture(indexTexture, "Resources/name.png");
+
+    glUseProgram(indexShader);
+    glUniform1i(glGetUniformLocation(indexShader, "tex"), 0);
+
+
+    glfwSetKeyCallback(window, key_callback);
+    
 
     while (!glfwWindowShouldClose(window))
     {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT); 
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, indexTexture);
+
+        drawRect(indexShader, VAOrect);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
