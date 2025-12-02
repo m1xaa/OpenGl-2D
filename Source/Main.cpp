@@ -21,6 +21,8 @@ unsigned int openTexture, closeTexture, stopTexture, ventTexture;
 unsigned int glisaTexture;
 
 float uX = 0.0f;
+float elevatorY = -1 +  3 * FLAT_HEIGHT + 1 * LINE_THICKNESS;
+float elevatorX = RIGHT_VERTICAL_LINE_X;
 
 
 void preprocessTexture(unsigned& texture, const char* filepath) {
@@ -54,6 +56,33 @@ void formVAOs(float* verticesRect, size_t rectSize, unsigned int& VAOrect) {
     // Atribut 1 (boja):
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
     glEnableVertexAttribArray(1);
+}
+
+void formElevatorVAOs(float* vertices, size_t size, unsigned int& elevatorVAO) {
+    unsigned int elevatorVBO;
+    glGenVertexArrays(1, &elevatorVAO);
+    glGenBuffers(1, &elevatorVBO);
+
+    glBindVertexArray(elevatorVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, elevatorVBO);
+    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+}
+
+void drawElevator(unsigned int elevatorShader, unsigned int elevatorVAO) {
+    glUseProgram(elevatorShader);
+    glBindVertexArray(elevatorVAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);   
+    glDrawArrays(GL_TRIANGLE_FAN, 4, 4);  
+    glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
 }
 
 void createButtonVAO(unsigned int& VAO)
@@ -192,6 +221,7 @@ int main()
     unsigned int panelShader = createShader("panel.vert", "panel.frag");
     unsigned int lineShader = createShader("line.vert", "line.frag");
     unsigned int glisaShader = createShader("person.vert", "person.frag");
+    unsigned int elevatorShader = createShader("elevator.vert", "elevator.frag");
 
     unsigned int lineVAO;
     createLineVAO(lineVAO);
@@ -249,6 +279,27 @@ int main()
     glUseProgram(glisaShader);
     glUniform1i(glGetUniformLocation(glisaShader, "tex"), 0);
 
+    float elevatorRect[] = {
+    elevatorX, elevatorY, 1,0,0, 0,
+    elevatorX, elevatorY - LINE_THICKNESS, 1,0,0, 0,
+    1, elevatorY - LINE_THICKNESS, 1,0,0, 0,
+    1, elevatorY, 1,0,0, 0,
+
+    elevatorX, elevatorY - LINE_THICKNESS, 0,0,0, 1,
+    elevatorX, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 0,0,0, 1,
+    1, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 0,0,0, 1,
+    1, elevatorY - LINE_THICKNESS, 0,0,0, 1,
+
+    elevatorX, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 1,0,0, 0,
+    elevatorX, elevatorY - FLAT_HEIGHT - 2*LINE_THICKNESS, 1,0,0, 0,
+    1, elevatorY - FLAT_HEIGHT - 2*LINE_THICKNESS, 1,0,0, 0,
+    1, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 1,0,0, 0,
+
+    };
+
+    unsigned int VAOelevator;
+    formElevatorVAOs(elevatorRect, sizeof(elevatorRect), VAOelevator);
+
     glfwSetKeyCallback(window, key_callback);
     
 
@@ -279,6 +330,8 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, glisaTexture);
         drawPerson(glisaShader, VAOglisa);
+
+        drawElevator(elevatorShader, VAOelevator);
 
         float col1 = -0.85f;
         float col2 = -0.65f;

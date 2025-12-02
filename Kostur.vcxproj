@@ -132,6 +132,8 @@
     <ClInclude Include="Header\Util.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="elevator.frag" />
+    <None Include="elevator.vert" />
     <None Include="index.frag" />
     <None Include="index.vert" />
     <None Include="line.frag" />
