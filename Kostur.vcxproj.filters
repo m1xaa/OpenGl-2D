@@ -44,6 +44,18 @@
     <None Include="panel.frag">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="line.vert">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="line.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="person.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="person.vert">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\0.png">
@@ -83,6 +95,9 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="Resources\5.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\glisa.png">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

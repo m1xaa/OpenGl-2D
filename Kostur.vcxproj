@@ -134,9 +134,13 @@
   <ItemGroup>
     <None Include="index.frag" />
     <None Include="index.vert" />
+    <None Include="line.frag" />
+    <None Include="line.vert" />
     <None Include="packages.config" />
     <None Include="panel.frag" />
     <None Include="panel.vert" />
+    <None Include="person.frag" />
+    <None Include="person.vert" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Resources\-1.png" />
@@ -148,6 +152,7 @@
     <Image Include="Resources\5.png" />
     <Image Include="Resources\6.png" />
     <Image Include="Resources\close.png" />
+    <Image Include="Resources\glisa.png" />
     <Image Include="Resources\name.png" />
     <Image Include="Resources\open.png" />
     <Image Include="Resources\stop.jpg" />

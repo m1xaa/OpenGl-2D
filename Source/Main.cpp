@@ -3,10 +3,24 @@
 
 #include "../Header/Util.h"
 
+#define LEFT_VERTICAL_LINE_X -0.55F
+#define RIGHT_VERTICAL_LINE_X 0.75f
+#define LINE_THICKNESS 0.01f
+
+#define NUM_FLATS 8
+#define FLAT_HEIGHT 2.0f / NUM_FLATS 
+#define PERSON_HEIGHT 0.8f * FLAT_HEIGHT
+#define PERSON_WIDTH 0.2f
+#define PERSON_START_X 0.0f
+#define PERSON_START_Y -1.0f + 2*LINE_THICKNESS + FLAT_HEIGHT
+
 
 unsigned int indexTexture;
 unsigned int suTexture, prTexture, firstTexture, secondTexture, thirdTexture, fourthTexture, fifthTexture, sixthTexture;
 unsigned int openTexture, closeTexture, stopTexture, ventTexture;
+unsigned int glisaTexture;
+
+float uX = 0.0f;
 
 
 void preprocessTexture(unsigned& texture, const char* filepath) {
@@ -73,6 +87,13 @@ void drawRect(unsigned int rectShader, unsigned int VAOrect) {
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4); 
 }
 
+void drawPerson(unsigned int glisaShader, unsigned int VAOglisa) {
+    glUseProgram(glisaShader);
+    glBindVertexArray(VAOglisa);
+    glUniform1f(glGetUniformLocation(glisaShader, "uX"), uX);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
 void drawButton(unsigned int texture, float x, float y, unsigned int panelShader, unsigned int buttonVAO)
 {
     glUseProgram(panelShader);
@@ -85,6 +106,52 @@ void drawButton(unsigned int texture, float x, float y, unsigned int panelShader
 
     glBindVertexArray(buttonVAO);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+void createLineVAO(unsigned int& lineVAO)
+{
+    float vertices[] = {
+        -0.5f,  1.0f,
+        -0.5f, -1.0f,
+         0.5f, -1.0f,
+         0.5f,  1.0f
+    };
+
+    unsigned int VBO;
+    glGenVertexArrays(1, &lineVAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(lineVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+}
+
+void drawLine(float x, float y, float w, float h, unsigned int shader, unsigned int lineVAO)
+{
+    glUseProgram(shader);
+
+    glUniform2f(glGetUniformLocation(shader, "uOffset"), x, y);
+    glUniform2f(glGetUniformLocation(shader, "uScale"), w, h);
+    glUniform3f(glGetUniformLocation(shader, "uColor"), 1.0f, 1.0f, 1.0f);
+
+    glBindVertexArray(lineVAO);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+void drawHorizontalLines(float leftX, float rightX, unsigned int shader, unsigned int& lineVAO) 
+{
+    float centerX = (leftX + rightX) / 2.0f;
+
+    float w = (rightX - leftX);
+
+    for (int i = 0; i < NUM_FLATS; i++)
+    {
+        float y = -1.0f + i * FLAT_HEIGHT;
+        drawLine(centerX, y, w, LINE_THICKNESS, shader, lineVAO);
+    }
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -123,6 +190,11 @@ int main()
 
     unsigned int indexShader = createShader("index.vert", "index.frag");
     unsigned int panelShader = createShader("panel.vert", "panel.frag");
+    unsigned int lineShader = createShader("line.vert", "line.frag");
+    unsigned int glisaShader = createShader("person.vert", "person.frag");
+
+    unsigned int lineVAO;
+    createLineVAO(lineVAO);
 
     unsigned int buttonVAO;
     createButtonVAO(buttonVAO);
@@ -164,18 +236,49 @@ int main()
     glUseProgram(indexShader);
     glUniform1i(glGetUniformLocation(indexShader, "tex"), 0);
 
+    float glisaRect[] = {
+    PERSON_START_X - PERSON_WIDTH / 2,  PERSON_START_Y + PERSON_HEIGHT, 0.0f, 1.0f,
+    PERSON_START_X - PERSON_WIDTH / 2,  PERSON_START_Y, 0.0f, 0.0f,
+    PERSON_START_X + PERSON_WIDTH / 2,  PERSON_START_Y, 1.0f, 0.0f,
+    PERSON_START_X + PERSON_WIDTH / 2,  PERSON_START_Y + PERSON_HEIGHT, 1.0f, 1.0f
+    };
+
+    unsigned int VAOglisa;
+    formVAOs(glisaRect, sizeof(glisaRect), VAOglisa);
+    preprocessTexture(glisaTexture, "Resources/glisa.png");
+    glUseProgram(glisaShader);
+    glUniform1i(glGetUniformLocation(glisaShader, "tex"), 0);
 
     glfwSetKeyCallback(window, key_callback);
     
 
     while (!glfwWindowShouldClose(window))
     {
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+        {
+            uX -= 0.001f;
+        }
+        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+        {
+            uX += 0.001f;
+        }
+
+        float margin = 0.05f;
+        if (uX - PERSON_WIDTH / 2 + margin < LEFT_VERTICAL_LINE_X)
+            uX = LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - margin;
+        if (uX + PERSON_WIDTH / 2 - margin > RIGHT_VERTICAL_LINE_X)
+            uX = RIGHT_VERTICAL_LINE_X - PERSON_WIDTH / 2 + margin;
+
         glClear(GL_COLOR_BUFFER_BIT); 
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, indexTexture);
 
         drawRect(indexShader, VAOrect);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, glisaTexture);
+        drawPerson(glisaShader, VAOglisa);
 
         float col1 = -0.85f;
         float col2 = -0.65f;
@@ -201,6 +304,12 @@ int main()
 
         drawButton(stopTexture, col1, yTop + 5 * dy, panelShader, buttonVAO);
         drawButton(ventTexture, col2, yTop + 5 * dy, panelShader, buttonVAO);
+
+        drawLine(LEFT_VERTICAL_LINE_X, 0.0f, LINE_THICKNESS, 1.0f, lineShader, lineVAO);
+
+        drawLine(RIGHT_VERTICAL_LINE_X, 0.0f, LINE_THICKNESS, 1.0f, lineShader, lineVAO);
+
+        drawHorizontalLines(LEFT_VERTICAL_LINE_X, RIGHT_VERTICAL_LINE_X,lineShader, lineVAO);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
