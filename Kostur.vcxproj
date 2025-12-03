@@ -154,8 +154,10 @@
     <Image Include="Resources\5.png" />
     <Image Include="Resources\6.png" />
     <Image Include="Resources\close.png" />
+    <Image Include="Resources\colored_cursor.png" />
     <Image Include="Resources\glisa.png" />
     <Image Include="Resources\name.png" />
+    <Image Include="Resources\normal_cursor.png" />
     <Image Include="Resources\open.png" />
     <Image Include="Resources\stop.jpg" />
     <Image Include="Resources\vent.png" />

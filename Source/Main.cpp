@@ -51,6 +51,11 @@ float doorOpenStart = 0.0f;
 float doorOpenDuration = 5.0f; 
 bool doorExtendedOnce = false;
 
+bool ventilationOn = false;
+
+GLFWcursor* cursorNormal;
+GLFWcursor* cursorColored;
+
 std::queue<int> elevatorFlats = {};
 
 bool selectedFloors[8] = { false };
@@ -73,7 +78,7 @@ void addButton(float x, float y, int id) {
 };
 
 float getFlatY(int flat) {
-    return -1.0f + (flat+1) * FLAT_HEIGHT + (flat-1) * LINE_THICKNESS;
+    return -1.0f + (flat + 1) * FLAT_HEIGHT;
 }
 
 float compute_person_left_x_boundary() {
@@ -311,7 +316,7 @@ void move_doors() {
 }
 
 
-void move_elevator() {
+void move_elevator(GLFWwindow* window) {
 
     if (elevatorFlats.empty()) {
         for (int i = 0; i < 8; i++) {
@@ -351,7 +356,10 @@ void move_elevator() {
         elevator_current_flat = elevatorTargetFlat;
         elevatorFlats.pop();
         elevatorMoving = false;
-
+        if (ventilationOn) {
+            ventilationOn = false;
+            glfwSetCursor(window, cursorNormal);
+        }
         doorState = DOORS_OPENING;
     }
 
@@ -390,7 +398,7 @@ void drawButtonFrame(float x, float y, unsigned int shader, unsigned int& button
 }
 
 
-void handle_button_click(int id)
+void handle_button_click(int id, GLFWwindow* window)
 {
     std::cout << "Kliknut button id: " << id << std::endl;
 
@@ -424,6 +432,8 @@ void handle_button_click(int id)
         break;
 
     case 11: // VENT
+        ventilationOn = true;
+        glfwSetCursor(window, cursorColored);
         break;
     }
 }
@@ -455,7 +465,7 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         if (inside)
         {
-            handle_button_click(b.id);
+            handle_button_click(b.id, window);
             break;
         }
     }
@@ -472,11 +482,14 @@ int main()
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
+    glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);   
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+
     GLFWwindow* window = glfwCreateWindow(
         mode->width,
         mode->height,
         "Kostur",
-        monitor,   
+        NULL,
         NULL
     );
 
@@ -484,6 +497,11 @@ int main()
     glfwMakeContextCurrent(window);
 
     if (glewInit() != GLEW_OK) return endProgram("GLEW nije uspeo da se inicijalizuje.");
+
+    cursorNormal = loadImageToCursor("Resources/normal_cursor.png");
+    cursorColored = loadImageToCursor("Resources/colored_cursor.png");
+
+    glfwSetCursor(window, cursorNormal);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -581,7 +599,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
-        move_elevator();
+        move_elevator(window);
         move_doors();
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {

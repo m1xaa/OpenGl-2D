@@ -106,5 +106,11 @@
     <Image Include="Resources\glisa.png">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="Resources\normal_cursor.png">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="Resources\colored_cursor.png">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
