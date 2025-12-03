@@ -5,6 +5,8 @@
 
 #include <vector>
 
+#define FPS 75
+
 enum DoorState {
     DOORS_CLOSED,
     DOORS_OPENING,
@@ -18,6 +20,7 @@ struct Button {
     float h = 0.2f;
     int id;
 };
+
 void addButton(float x, float y, int id, std::vector<Button>& buttons);
 float getFlatY(int flat, float FLAT_HEIGHT);
 float compute_person_left_x_boundary(
@@ -34,3 +37,5 @@ float compute_person_right_x_boundary(
     bool person_in_elevator,
     float RIGHT_VERTICAL_LINE_X
 );
+
+void limitFPS(double last_time_for_refresh);

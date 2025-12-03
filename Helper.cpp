@@ -46,3 +46,21 @@ float compute_person_right_x_boundary(
         return RIGHT_VERTICAL_LINE_X - PERSON_WIDTH / 2 + 0.05f;
     }
 }
+
+void limitFPS(double lastTimeForRefresh)
+{
+    double now = glfwGetTime();
+    double targetFrameTime = 1.0 / FPS;
+    double remaining = (lastTimeForRefresh + targetFrameTime) - now;
+
+    if (remaining > 0.0)
+    {
+        glfwWaitEventsTimeout(remaining);
+    }
+    else
+    {
+        glfwPollEvents();
+    }
+
+    lastTimeForRefresh = glfwGetTime();
+}

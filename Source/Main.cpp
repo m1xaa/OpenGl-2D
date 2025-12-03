@@ -56,10 +56,9 @@ GLFWcursor* cursorColored;
 std::queue<int> elevatorFlats = {};
 
 bool selectedFloors[8] = { false };
-
-
-
 std::vector<Button> buttons;
+
+double last_time_for_refresh;
 
 
 void preprocessTexture(unsigned& texture, const char* filepath) {
@@ -467,6 +466,8 @@ int main()
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        limitFPS(last_time_for_refresh);
     }
 
     glfwDestroyWindow(window);
