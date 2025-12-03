@@ -5,6 +5,9 @@
 #include <queue>
 
 #include "../Header/Util.h"
+#include "../FormVAO.h"
+#include "../Draw.h"
+#include "../Helper.h"
 
 #define LEFT_VERTICAL_LINE_X -0.55F
 #define RIGHT_VERTICAL_LINE_X 0.75f
@@ -36,12 +39,6 @@ float uY = -FLAT_HEIGHT;
 float elevatorX = RIGHT_VERTICAL_LINE_X;
 
 bool person_in_elevator = false;
-enum DoorState {
-    DOORS_CLOSED,
-    DOORS_OPENING,
-    DOORS_OPEN,
-    DOORS_CLOSING
-};
 
 DoorState doorState = DOORS_CLOSED;
 
@@ -60,50 +57,9 @@ std::queue<int> elevatorFlats = {};
 
 bool selectedFloors[8] = { false };
 
-struct Button {
-    float x, y;         
-    float w = 0.2f;     
-    float h = 0.2f;     
-    int id;            
-};
+
 
 std::vector<Button> buttons;
-
-void addButton(float x, float y, int id) {
-    Button b;
-    b.x = x;
-    b.y = y;
-    b.id = id;
-    buttons.push_back(b);
-};
-
-float getFlatY(int flat) {
-    return -1.0f + (flat + 1) * FLAT_HEIGHT;
-}
-
-float compute_person_left_x_boundary() {
-    if (doorState == DOORS_OPEN) {
-        return LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
-    }
-    if (!person_in_elevator) {
-        return LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
-    }
-    else {
-        return RIGHT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
-    }
-}
-
-float compute_person_right_x_boundary() {
-    if (doorState == DOORS_OPEN) {
-        return 1.0f - PERSON_WIDTH / 2 + 0.05f;
-    }
-    if (person_in_elevator) {
-        return 1.0f - PERSON_WIDTH / 2 + 0.05f;
-    }
-    else {
-        return RIGHT_VERTICAL_LINE_X - PERSON_WIDTH / 2 + 0.05f;
-    }
-}
 
 
 void preprocessTexture(unsigned& texture, const char* filepath) {
@@ -120,173 +76,6 @@ void preprocessTexture(unsigned& texture, const char* filepath) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 }
 
-void createButtonFrameVAO(unsigned int& VAO)
-{
-    float vertices[] = {
-        -0.1f,  0.1f,
-        -0.1f, -0.1f,
-         0.1f, -0.1f,
-         0.1f,  0.1f
-    };
-
-    unsigned int VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-}
-
-void formVAOs(float* verticesRect, size_t rectSize, unsigned int& VAOrect) {
-
-    unsigned int VBOrect;
-    glGenVertexArrays(1, &VAOrect);
-    glGenBuffers(1, &VBOrect);
-
-    glBindVertexArray(VAOrect);
-    glBindBuffer(GL_ARRAY_BUFFER, VBOrect);
-    glBufferData(GL_ARRAY_BUFFER, rectSize, verticesRect, GL_STATIC_DRAW);
-
-    // Atribut 0 (pozicija):
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    // Atribut 1 (boja):
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-}
-
-void formElevatorVAOs(float* vertices, size_t size, unsigned int& elevatorVAO) {
-    unsigned int elevatorVBO;
-    glGenVertexArrays(1, &elevatorVAO);
-    glGenBuffers(1, &elevatorVBO);
-
-    glBindVertexArray(elevatorVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, elevatorVBO);
-    glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(5 * sizeof(float)));
-    glEnableVertexAttribArray(2);
-}
-
-void drawElevator(unsigned int elevatorShader, unsigned int elevatorVAO) {
-    glUseProgram(elevatorShader);
-    glBindVertexArray(elevatorVAO);
-    glUniform1f(glGetUniformLocation(elevatorShader, "uY"), uY);
-    glUniform1f(glGetUniformLocation(elevatorShader, "doorsuY"), doorsuY);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);   
-    glDrawArrays(GL_TRIANGLE_FAN, 4, 4);  
-    glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
-}
-
-void createButtonVAO(unsigned int& VAO)
-{
-    float vertices[] = {
-        -0.1f,  0.1f,  0.0f, 1.0f,
-        -0.1f, -0.1f,  0.0f, 0.0f,
-         0.1f, -0.1f,  1.0f, 0.0f,
-         0.1f,  0.1f,  1.0f, 1.0f
-    };
-
-    unsigned int VBO;
-    glGenVertexArrays(1, &VAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(VAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-}
-
-
-void drawRect(unsigned int rectShader, unsigned int VAOrect) {
-    glUseProgram(rectShader); 
-    glBindVertexArray(VAOrect);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4); 
-}
-
-void drawPerson(unsigned int glisaShader, unsigned int VAOglisa) {
-    glUseProgram(glisaShader);
-    glBindVertexArray(VAOglisa);
-    glUniform1f(glGetUniformLocation(glisaShader, "uX"), uX);
-    glUniform1f(glGetUniformLocation(glisaShader, "uY"), personuY);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-}
-
-void drawButton(unsigned int texture, float x, float y, unsigned int panelShader, unsigned int buttonVAO)
-{
-    glUseProgram(panelShader);
-
-    glUniform2f(glGetUniformLocation(panelShader, "uPos"), x, y);
-    glUniform2f(glGetUniformLocation(panelShader, "uScale"), 0.8f, 0.8f);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glBindVertexArray(buttonVAO);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-}
-
-void createLineVAO(unsigned int& lineVAO)
-{
-    float vertices[] = {
-        -0.5f,  1.0f,
-        -0.5f, -1.0f,
-         0.5f, -1.0f,
-         0.5f,  1.0f
-    };
-
-    unsigned int VBO;
-    glGenVertexArrays(1, &lineVAO);
-    glGenBuffers(1, &VBO);
-
-    glBindVertexArray(lineVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-}
-
-void drawLine(float x, float y, float w, float h, unsigned int shader, unsigned int lineVAO)
-{
-    glUseProgram(shader);
-
-    glUniform2f(glGetUniformLocation(shader, "uOffset"), x, y);
-    glUniform2f(glGetUniformLocation(shader, "uScale"), w, h);
-    glUniform3f(glGetUniformLocation(shader, "uColor"), 1.0f, 1.0f, 1.0f);
-
-    glBindVertexArray(lineVAO);
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
-}
-
-void drawHorizontalLines(float leftX, float rightX, unsigned int shader, unsigned int& lineVAO) 
-{
-    float centerX = (leftX + rightX) / 2.0f;
-
-    float w = (rightX - leftX);
-
-    for (int i = 0; i < NUM_FLATS; i++)
-    {
-        float y = -1.0f + i * FLAT_HEIGHT;
-        drawLine(centerX, y, w, LINE_THICKNESS, shader, lineVAO);
-    }
-}
 void move_doors() {
 
     if (doorState == DOORS_OPENING) {
@@ -334,7 +123,7 @@ void move_elevator(GLFWwindow* window) {
         elevatorMoving = true;
     }
 
-    float targetY = getFlatY(elevatorTargetFlat);
+    float targetY = getFlatY(elevatorTargetFlat, FLAT_HEIGHT);
 
     if (uY < targetY) {
         if (person_in_elevator) {
@@ -374,7 +163,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        if (!person_in_elevator && doorState == DOORS_CLOSED && uX == compute_person_right_x_boundary()) {
+        if (!person_in_elevator && doorState == DOORS_CLOSED && uX == compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X)) {
             if (elevator_current_flat != person_current_flat) {
                 elevatorFlats.push(person_current_flat);
             }
@@ -383,18 +172,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
             }
         }
     }
-}
-
-void drawButtonFrame(float x, float y, unsigned int shader, unsigned int& buttonFrameVAO)
-{
-    glUseProgram(shader);
-
-    glUniform2f(glGetUniformLocation(shader, "uOffset"), x, y);
-    glUniform2f(glGetUniformLocation(shader, "uScale"), 1.0f, 1.0f);
-    glUniform3f(glGetUniformLocation(shader, "uColor"), 1.0f, 1.0f, 1.0f);
-
-    glBindVertexArray(buttonFrameVAO);
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
 }
 
 
@@ -546,7 +323,7 @@ int main()
 
 
     unsigned int VAOrect;
-    formVAOs(verticesRect, sizeof(verticesRect), VAOrect);
+    createRectVAO(verticesRect, sizeof(verticesRect), VAOrect);
 
     glClearColor(0.2f, 0.8f, 0.6f, 1.0f);
 
@@ -563,7 +340,7 @@ int main()
     };
 
     unsigned int VAOglisa;
-    formVAOs(glisaRect, sizeof(glisaRect), VAOglisa);
+    createRectVAO(glisaRect, sizeof(glisaRect), VAOglisa);
     preprocessTexture(glisaTexture, "Resources/glisa.png");
     glUseProgram(glisaShader);
     glUniform1i(glGetUniformLocation(glisaShader, "tex"), 0);
@@ -588,7 +365,7 @@ int main()
 
 
     unsigned int VAOelevator;
-    formElevatorVAOs(elevatorRect, sizeof(elevatorRect), VAOelevator);
+    createElevatorVAO(elevatorRect, sizeof(elevatorRect), VAOelevator);
 
     unsigned int buttonFrameVAO;
     createButtonFrameVAO(buttonFrameVAO);
@@ -610,8 +387,8 @@ int main()
             uX += 0.001f;
         }
 
-        float right_bounadry = compute_person_right_x_boundary();
-        float left_boundary = compute_person_left_x_boundary();
+        float right_bounadry = compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X);
+        float left_boundary = compute_person_left_x_boundary(doorState, LEFT_VERTICAL_LINE_X, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X);
         if (uX > right_bounadry) uX = right_bounadry;
         if (uX < left_boundary) uX = left_boundary;
 
@@ -640,9 +417,9 @@ int main()
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, glisaTexture);
-        drawPerson(glisaShader, VAOglisa);
+        drawPerson(glisaShader, VAOglisa, uX, personuY);
 
-        drawElevator(elevatorShader, VAOelevator);
+        drawElevator(elevatorShader, VAOelevator, uY, doorsuY);
 
         buttons.clear();
 
@@ -654,23 +431,23 @@ int main()
 
         int id = 0;
 
-        addButton(col1, yTop, id++);  drawButton(suTexture, col1, yTop, panelShader, buttonVAO);
-        addButton(col2, yTop, id++);  drawButton(prTexture, col2, yTop, panelShader, buttonVAO);
+        addButton(col1, yTop, id++, buttons);  drawButton(suTexture, col1, yTop, panelShader, buttonVAO);
+        addButton(col2, yTop, id++, buttons);  drawButton(prTexture, col2, yTop, panelShader, buttonVAO);
 
-        addButton(col1, yTop + dy, id++);  drawButton(firstTexture, col1, yTop + dy, panelShader, buttonVAO);
-        addButton(col2, yTop + dy, id++);  drawButton(secondTexture, col2, yTop + dy, panelShader, buttonVAO);
+        addButton(col1, yTop + dy, id++, buttons);  drawButton(firstTexture, col1, yTop + dy, panelShader, buttonVAO);
+        addButton(col2, yTop + dy, id++, buttons);  drawButton(secondTexture, col2, yTop + dy, panelShader, buttonVAO);
 
-        addButton(col1, yTop + 2 * dy, id++); drawButton(thirdTexture, col1, yTop + 2 * dy, panelShader, buttonVAO);
-        addButton(col2, yTop + 2 * dy, id++); drawButton(fourthTexture, col2, yTop + 2 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 2 * dy, id++, buttons); drawButton(thirdTexture, col1, yTop + 2 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 2 * dy, id++, buttons); drawButton(fourthTexture, col2, yTop + 2 * dy, panelShader, buttonVAO);
 
-        addButton(col1, yTop + 3 * dy, id++); drawButton(fifthTexture, col1, yTop + 3 * dy, panelShader, buttonVAO);
-        addButton(col2, yTop + 3 * dy, id++); drawButton(sixthTexture, col2, yTop + 3 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 3 * dy, id++, buttons); drawButton(fifthTexture, col1, yTop + 3 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 3 * dy, id++, buttons); drawButton(sixthTexture, col2, yTop + 3 * dy, panelShader, buttonVAO);
 
-        addButton(col1, yTop + 4 * dy, id++); drawButton(openTexture, col1, yTop + 4 * dy, panelShader, buttonVAO);
-        addButton(col2, yTop + 4 * dy, id++); drawButton(closeTexture, col2, yTop + 4 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 4 * dy, id++, buttons); drawButton(openTexture, col1, yTop + 4 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 4 * dy, id++, buttons); drawButton(closeTexture, col2, yTop + 4 * dy, panelShader, buttonVAO);
 
-        addButton(col1, yTop + 5 * dy, id++); drawButton(stopTexture, col1, yTop + 5 * dy, panelShader, buttonVAO);
-        addButton(col2, yTop + 5 * dy, id++); drawButton(ventTexture, col2, yTop + 5 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 5 * dy, id++, buttons); drawButton(stopTexture, col1, yTop + 5 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 5 * dy, id++, buttons); drawButton(ventTexture, col2, yTop + 5 * dy, panelShader, buttonVAO);
 
         for (int i = 0; i < 8; i++) {
             if (selectedFloors[i]) {
@@ -686,7 +463,7 @@ int main()
 
         drawLine(RIGHT_VERTICAL_LINE_X, 0.0f, LINE_THICKNESS, 1.0f, lineShader, lineVAO);
 
-        drawHorizontalLines(LEFT_VERTICAL_LINE_X, RIGHT_VERTICAL_LINE_X,lineShader, lineVAO);
+        drawHorizontalLines(LEFT_VERTICAL_LINE_X, RIGHT_VERTICAL_LINE_X,lineShader, lineVAO, NUM_FLATS, FLAT_HEIGHT, LINE_THICKNESS);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
