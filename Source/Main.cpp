@@ -1,6 +1,8 @@
 ﻿#include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <queue>
+
 #include "../Header/Util.h"
 
 #define LEFT_VERTICAL_LINE_X -0.55F
@@ -13,6 +15,7 @@
 #define PERSON_WIDTH 0.2f
 #define PERSON_START_X 0.0f
 #define PERSON_START_Y -1.0f + 2*LINE_THICKNESS + FLAT_HEIGHT
+#define ELEVATOR_SPEED 0.0005f
 
 
 unsigned int indexTexture;
@@ -20,9 +23,21 @@ unsigned int suTexture, prTexture, firstTexture, secondTexture, thirdTexture, fo
 unsigned int openTexture, closeTexture, stopTexture, ventTexture;
 unsigned int glisaTexture;
 
+int elevator_current_flat = 2;   //flats - 0 1 2 3 4 5 6 7
+int person_current_flat = 1;
+
+bool elevatorMoving = false;
+int elevatorTargetFlat = -1;
+
 float uX = 0.0f;
-float elevatorY = -1 +  3 * FLAT_HEIGHT + 1 * LINE_THICKNESS;
+float uY = -FLAT_HEIGHT;
 float elevatorX = RIGHT_VERTICAL_LINE_X;
+
+std::queue<int> elevatorFlats = {};
+
+float getFlatY(int flat) {
+    return -1.0f + (flat+1) * FLAT_HEIGHT + (flat-1) * LINE_THICKNESS;
+}
 
 
 void preprocessTexture(unsigned& texture, const char* filepath) {
@@ -80,6 +95,7 @@ void formElevatorVAOs(float* vertices, size_t size, unsigned int& elevatorVAO) {
 void drawElevator(unsigned int elevatorShader, unsigned int elevatorVAO) {
     glUseProgram(elevatorShader);
     glBindVertexArray(elevatorVAO);
+    glUniform1f(glGetUniformLocation(elevatorShader, "uY"), uY);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);   
     glDrawArrays(GL_TRIANGLE_FAN, 4, 4);  
     glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
@@ -183,10 +199,51 @@ void drawHorizontalLines(float leftX, float rightX, unsigned int shader, unsigne
     }
 }
 
+void move_elevator() {
+    if (elevatorFlats.empty()) {
+        elevatorMoving = false;
+        return;
+    }
+
+    if (!elevatorMoving) {
+        elevatorTargetFlat = elevatorFlats.front();
+        elevatorMoving = true;
+    }
+
+    float targetY = getFlatY(elevatorTargetFlat);
+
+    if (uY < targetY) {
+        uY += ELEVATOR_SPEED;
+        if (uY > targetY) uY = targetY;
+    }
+    else if (uY > targetY) {
+        uY -= ELEVATOR_SPEED;
+        if (uY < targetY) uY = targetY;
+    }
+
+    if (fabs(uY - targetY) < 0.0001f) {
+        uY = targetY;  
+        elevator_current_flat = elevatorTargetFlat;
+        elevatorFlats.pop();
+        elevatorMoving = false;
+    }
+}
+
+
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+    }
+
+    if (key == GLFW_KEY_C && action == GLFW_PRESS) {
+        if (elevator_current_flat != person_current_flat) {
+            elevatorFlats.push(person_current_flat);
+            elevatorFlats.push(5);
+            elevatorFlats.push(3);
+            elevatorFlats.push(0);
+        }
     }
 }
 
@@ -280,22 +337,23 @@ int main()
     glUniform1i(glGetUniformLocation(glisaShader, "tex"), 0);
 
     float elevatorRect[] = {
-    elevatorX, elevatorY, 1,0,0, 0,
-    elevatorX, elevatorY - LINE_THICKNESS, 1,0,0, 0,
-    1, elevatorY - LINE_THICKNESS, 1,0,0, 0,
-    1, elevatorY, 1,0,0, 0,
+        elevatorX, 0.0f,                        1,0,0, 0,
+        elevatorX, -LINE_THICKNESS,             1,0,0, 0,
+        1.0f,      -LINE_THICKNESS,             1,0,0, 0,
+        1.0f,       0.0f,                       1,0,0, 0,
 
-    elevatorX, elevatorY - LINE_THICKNESS, 0,0,0, 1,
-    elevatorX, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 0,0,0, 1,
-    1, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 0,0,0, 1,
-    1, elevatorY - LINE_THICKNESS, 0,0,0, 1,
+        elevatorX, -LINE_THICKNESS,             0,0,0, 1,
+        elevatorX, -FLAT_HEIGHT,                0,0,0, 1,
+        1.0f,      -FLAT_HEIGHT,                0,0,0, 1,
+        1.0f,      -LINE_THICKNESS,             0,0,0, 1,
 
-    elevatorX, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 1,0,0, 0,
-    elevatorX, elevatorY - FLAT_HEIGHT - 2*LINE_THICKNESS, 1,0,0, 0,
-    1, elevatorY - FLAT_HEIGHT - 2*LINE_THICKNESS, 1,0,0, 0,
-    1, elevatorY - FLAT_HEIGHT - LINE_THICKNESS, 1,0,0, 0,
-
+        elevatorX, -FLAT_HEIGHT,                1,0,0, 0,
+        elevatorX, -FLAT_HEIGHT - LINE_THICKNESS, 1,0,0, 0,
+        1.0f,      -FLAT_HEIGHT - LINE_THICKNESS, 1,0,0, 0,
+        1.0f,      -FLAT_HEIGHT,                1,0,0, 0,
     };
+
+
 
     unsigned int VAOelevator;
     formElevatorVAOs(elevatorRect, sizeof(elevatorRect), VAOelevator);
@@ -305,6 +363,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {
+        move_elevator();
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
             uX -= 0.001f;
