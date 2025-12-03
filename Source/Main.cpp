@@ -53,6 +53,8 @@ bool doorExtendedOnce = false;
 
 std::queue<int> elevatorFlats = {};
 
+bool selectedFloors[8] = { false };
+
 struct Button {
     float x, y;         
     float w = 0.2f;     
@@ -111,6 +113,27 @@ void preprocessTexture(unsigned& texture, const char* filepath) {
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+}
+
+void createButtonFrameVAO(unsigned int& VAO)
+{
+    float vertices[] = {
+        -0.1f,  0.1f,
+        -0.1f, -0.1f,
+         0.1f, -0.1f,
+         0.1f,  0.1f
+    };
+
+    unsigned int VBO;
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 }
 
 void formVAOs(float* verticesRect, size_t rectSize, unsigned int& VAOrect) {
@@ -290,6 +313,12 @@ void move_doors() {
 
 void move_elevator() {
 
+    if (elevatorFlats.empty()) {
+        for (int i = 0; i < 8; i++) {
+            selectedFloors[i] = false;
+        }
+    }
+
     if (elevatorFlats.empty() || doorState != DOORS_CLOSED) {
         elevatorMoving = false;
         return;
@@ -348,6 +377,19 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
+void drawButtonFrame(float x, float y, unsigned int shader, unsigned int& buttonFrameVAO)
+{
+    glUseProgram(shader);
+
+    glUniform2f(glGetUniformLocation(shader, "uOffset"), x, y);
+    glUniform2f(glGetUniformLocation(shader, "uScale"), 1.0f, 1.0f);
+    glUniform3f(glGetUniformLocation(shader, "uColor"), 1.0f, 1.0f, 1.0f);
+
+    glBindVertexArray(buttonFrameVAO);
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+}
+
+
 void handle_button_click(int id)
 {
     std::cout << "Kliknut button id: " << id << std::endl;
@@ -356,14 +398,14 @@ void handle_button_click(int id)
 
     switch (id) {
 
-    case 0: elevatorFlats.push(0); break; // SU
-    case 1: elevatorFlats.push(1); break;  // PR
-    case 2: elevatorFlats.push(2); break;  // 1
-    case 3: elevatorFlats.push(3); break;  // 2
-    case 4: elevatorFlats.push(4); break;  // 3
-    case 5: elevatorFlats.push(5); break;  // 4
-    case 6: elevatorFlats.push(6); break;  // 5
-    case 7: elevatorFlats.push(7); break;  // 6
+    case 0: elevatorFlats.push(0); selectedFloors[0] = true; break; //SU
+    case 1: elevatorFlats.push(1); selectedFloors[1] = true; break; //PR
+    case 2: elevatorFlats.push(2); selectedFloors[2] = true; break; //1
+    case 3: elevatorFlats.push(3); selectedFloors[3] = true; break; //2
+    case 4: elevatorFlats.push(4); selectedFloors[4] = true; break; //3
+    case 5: elevatorFlats.push(5); selectedFloors[5] = true; break; //4
+    case 6: elevatorFlats.push(6); selectedFloors[6] = true; break; //5
+    case 7: elevatorFlats.push(7); selectedFloors[7] = true; break; //6
 
     case 8: // OPEN
         if (doorState == DOORS_CLOSED) doorState = DOORS_OPENING;
@@ -530,6 +572,9 @@ int main()
     unsigned int VAOelevator;
     formElevatorVAOs(elevatorRect, sizeof(elevatorRect), VAOelevator);
 
+    unsigned int buttonFrameVAO;
+    createButtonFrameVAO(buttonFrameVAO);
+
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
     
@@ -608,6 +653,16 @@ int main()
 
         addButton(col1, yTop + 5 * dy, id++); drawButton(stopTexture, col1, yTop + 5 * dy, panelShader, buttonVAO);
         addButton(col2, yTop + 5 * dy, id++); drawButton(ventTexture, col2, yTop + 5 * dy, panelShader, buttonVAO);
+
+        for (int i = 0; i < 8; i++) {
+            if (selectedFloors[i]) {
+                drawButtonFrame(
+                    buttons[i].x,
+                    buttons[i].y,
+                    lineShader,
+                    buttonFrameVAO);
+            }
+        }
 
         drawLine(LEFT_VERTICAL_LINE_X, 0.0f, LINE_THICKNESS, 1.0f, lineShader, lineVAO);
 
