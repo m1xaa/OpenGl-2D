@@ -103,7 +103,6 @@ void move_doors() {
     }
 }
 
-
 void move_elevator(GLFWwindow* window) {
 
     if (elevatorFlats.empty()) {
@@ -153,8 +152,6 @@ void move_elevator(GLFWwindow* window) {
 
 }
 
-
-
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -173,11 +170,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-
 void handle_button_click(int id, GLFWwindow* window)
 {
-    std::cout << "Kliknut button id: " << id << std::endl;
-
     if (!person_in_elevator) return;
 
     switch (id) {
