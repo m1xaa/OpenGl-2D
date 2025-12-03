@@ -1,5 +1,6 @@
 ﻿#include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <iostream>
 
 #include <queue>
 
@@ -30,13 +31,71 @@ bool elevatorMoving = false;
 int elevatorTargetFlat = -1;
 
 float uX = 0.0f;
+float personuY = -3 * FLAT_HEIGHT + PERSON_HEIGHT;
 float uY = -FLAT_HEIGHT;
 float elevatorX = RIGHT_VERTICAL_LINE_X;
 
+bool person_in_elevator = false;
+enum DoorState {
+    DOORS_CLOSED,
+    DOORS_OPENING,
+    DOORS_OPEN,
+    DOORS_CLOSING
+};
+
+DoorState doorState = DOORS_CLOSED;
+
+float doorsuY = 0.0f;        
+float DOOR_SPEED = 0.0007f;     
+float doorOpenStart = 0.0f;    
+float doorOpenDuration = 5.0f; 
+bool doorExtendedOnce = false;
+
 std::queue<int> elevatorFlats = {};
+
+struct Button {
+    float x, y;         
+    float w = 0.2f;     
+    float h = 0.2f;     
+    int id;            
+};
+
+std::vector<Button> buttons;
+
+void addButton(float x, float y, int id) {
+    Button b;
+    b.x = x;
+    b.y = y;
+    b.id = id;
+    buttons.push_back(b);
+};
 
 float getFlatY(int flat) {
     return -1.0f + (flat+1) * FLAT_HEIGHT + (flat-1) * LINE_THICKNESS;
+}
+
+float compute_person_left_x_boundary() {
+    if (doorState == DOORS_OPEN) {
+        return LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
+    }
+    if (!person_in_elevator) {
+        return LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
+    }
+    else {
+        return RIGHT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
+    }
+}
+
+float compute_person_right_x_boundary() {
+    if (doorState == DOORS_OPEN) {
+        return 1.0f - PERSON_WIDTH / 2 + 0.05f;
+    }
+    if (person_in_elevator) {
+        return 1.0f - PERSON_WIDTH / 2 + 0.05f;
+    }
+    else {
+        return RIGHT_VERTICAL_LINE_X - PERSON_WIDTH / 2 + 0.05f;
+    }
 }
 
 
@@ -96,6 +155,7 @@ void drawElevator(unsigned int elevatorShader, unsigned int elevatorVAO) {
     glUseProgram(elevatorShader);
     glBindVertexArray(elevatorVAO);
     glUniform1f(glGetUniformLocation(elevatorShader, "uY"), uY);
+    glUniform1f(glGetUniformLocation(elevatorShader, "doorsuY"), doorsuY);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);   
     glDrawArrays(GL_TRIANGLE_FAN, 4, 4);  
     glDrawArrays(GL_TRIANGLE_FAN, 8, 4);
@@ -136,6 +196,7 @@ void drawPerson(unsigned int glisaShader, unsigned int VAOglisa) {
     glUseProgram(glisaShader);
     glBindVertexArray(VAOglisa);
     glUniform1f(glGetUniformLocation(glisaShader, "uX"), uX);
+    glUniform1f(glGetUniformLocation(glisaShader, "uY"), personuY);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
@@ -198,6 +259,34 @@ void drawHorizontalLines(float leftX, float rightX, unsigned int shader, unsigne
         drawLine(centerX, y, w, LINE_THICKNESS, shader, lineVAO);
     }
 }
+void move_doors() {
+
+    if (doorState == DOORS_OPENING) {
+        doorsuY += DOOR_SPEED;
+        if (doorsuY >= FLAT_HEIGHT) {
+            doorsuY = FLAT_HEIGHT;
+            doorState = DOORS_OPEN;
+            doorOpenStart = glfwGetTime();
+            doorExtendedOnce = false;
+        }
+    }
+
+    else if (doorState == DOORS_OPEN) {
+        if (glfwGetTime() - doorOpenStart >= doorOpenDuration) {
+            doorState = DOORS_CLOSING;
+        }
+    }
+
+    else if (doorState == DOORS_CLOSING) {
+        doorsuY -= DOOR_SPEED;
+        if (doorsuY <= 0.0f) {
+            doorsuY = 0.0f;
+            doorState = DOORS_CLOSED;
+            elevatorMoving = false;
+        }
+    }
+}
+
 
 void move_elevator() {
     if (elevatorFlats.empty()) {
@@ -213,20 +302,29 @@ void move_elevator() {
     float targetY = getFlatY(elevatorTargetFlat);
 
     if (uY < targetY) {
+        if (person_in_elevator) {
+            personuY += ELEVATOR_SPEED;
+        }
         uY += ELEVATOR_SPEED;
         if (uY > targetY) uY = targetY;
     }
     else if (uY > targetY) {
+        if (person_in_elevator) {
+            personuY -= ELEVATOR_SPEED;
+        }
         uY -= ELEVATOR_SPEED;
         if (uY < targetY) uY = targetY;
     }
 
     if (fabs(uY - targetY) < 0.0001f) {
-        uY = targetY;  
+        uY = targetY;
         elevator_current_flat = elevatorTargetFlat;
         elevatorFlats.pop();
         elevatorMoving = false;
+
+        doorState = DOORS_OPENING;
     }
+
 }
 
 
@@ -238,11 +336,85 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        if (elevator_current_flat != person_current_flat) {
-            elevatorFlats.push(person_current_flat);
-            elevatorFlats.push(5);
-            elevatorFlats.push(3);
-            elevatorFlats.push(0);
+        if (!person_in_elevator && doorState == DOORS_CLOSED) {
+            if (elevator_current_flat != person_current_flat) {
+                if (uX == compute_person_right_x_boundary())
+                    elevatorFlats.push(person_current_flat);
+            }
+            else {
+                doorState = DOORS_OPENING;
+            }
+        }
+    }
+}
+
+void handle_button_click(int id)
+{
+    std::cout << "Kliknut button id: " << id << std::endl;
+
+    if (!person_in_elevator) return;
+
+    switch (id) {
+
+    case 0: elevatorFlats.push(0); break; // SU
+    case 1: elevatorFlats.push(1); break;  // PR
+    case 2: elevatorFlats.push(2); break;  // 1
+    case 3: elevatorFlats.push(3); break;  // 2
+    case 4: elevatorFlats.push(4); break;  // 3
+    case 5: elevatorFlats.push(5); break;  // 4
+    case 6: elevatorFlats.push(6); break;  // 5
+    case 7: elevatorFlats.push(7); break;  // 6
+
+    case 8: // OPEN
+        if (doorState == DOORS_CLOSED) doorState = DOORS_OPENING;
+        else if (doorState == DOORS_OPEN && !doorExtendedOnce) {
+            doorOpenDuration += 5;
+            doorExtendedOnce = true;
+        }
+        break;
+
+    case 9: // CLOSE
+        if (doorState == DOORS_OPEN || doorState == DOORS_OPENING)
+            doorState = DOORS_CLOSING;
+        break;
+
+    case 10: // STOP
+        break;
+
+    case 11: // VENT
+        break;
+    }
+}
+
+
+void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (!person_in_elevator) {
+        return;
+    }
+
+    if (button != GLFW_MOUSE_BUTTON_LEFT || action != GLFW_PRESS)
+        return;
+
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+
+    float mx = (float)xpos / width * 2.0f - 1.0f;
+    float my = -(float)ypos / height * 2.0f + 1.0f;
+
+    for (auto& b : buttons)
+    {
+        bool inside =
+            mx >= b.x - b.w / 2 && mx <= b.x + b.w / 2 &&
+            my >= b.y - b.h / 2 && my <= b.y + b.h / 2;
+
+        if (inside)
+        {
+            handle_button_click(b.id);
+            break;
         }
     }
 }
@@ -324,10 +496,10 @@ int main()
     glUniform1i(glGetUniformLocation(indexShader, "tex"), 0);
 
     float glisaRect[] = {
-    PERSON_START_X - PERSON_WIDTH / 2,  PERSON_START_Y + PERSON_HEIGHT, 0.0f, 1.0f,
-    PERSON_START_X - PERSON_WIDTH / 2,  PERSON_START_Y, 0.0f, 0.0f,
-    PERSON_START_X + PERSON_WIDTH / 2,  PERSON_START_Y, 1.0f, 0.0f,
-    PERSON_START_X + PERSON_WIDTH / 2,  PERSON_START_Y + PERSON_HEIGHT, 1.0f, 1.0f
+    PERSON_START_X - PERSON_WIDTH / 2,  0, 0.0f, 1.0f,
+    PERSON_START_X - PERSON_WIDTH / 2,  -PERSON_HEIGHT, 0.0f, 0.0f,
+    PERSON_START_X + PERSON_WIDTH / 2,  -PERSON_HEIGHT, 1.0f, 0.0f,
+    PERSON_START_X + PERSON_WIDTH / 2,  0, 1.0f, 1.0f
     };
 
     unsigned int VAOglisa;
@@ -359,11 +531,13 @@ int main()
     formElevatorVAOs(elevatorRect, sizeof(elevatorRect), VAOelevator);
 
     glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
     
 
     while (!glfwWindowShouldClose(window))
     {
         move_elevator();
+        move_doors();
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
             uX -= 0.001f;
@@ -373,11 +547,26 @@ int main()
             uX += 0.001f;
         }
 
-        float margin = 0.05f;
-        if (uX - PERSON_WIDTH / 2 + margin < LEFT_VERTICAL_LINE_X)
-            uX = LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - margin;
-        if (uX + PERSON_WIDTH / 2 - margin > RIGHT_VERTICAL_LINE_X)
-            uX = RIGHT_VERTICAL_LINE_X - PERSON_WIDTH / 2 + margin;
+        float right_bounadry = compute_person_right_x_boundary();
+        float left_boundary = compute_person_left_x_boundary();
+        if (uX > right_bounadry) uX = right_bounadry;
+        if (uX < left_boundary) uX = left_boundary;
+
+        if (doorState == DOORS_OPEN) {
+
+
+            if (uX > RIGHT_VERTICAL_LINE_X && !person_in_elevator) {
+                person_in_elevator = true;
+                person_current_flat = elevator_current_flat;
+            }
+
+            if (uX < RIGHT_VERTICAL_LINE_X && person_in_elevator) {
+                person_in_elevator = false;
+                person_current_flat = elevator_current_flat;
+            }
+        }
+
+
 
         glClear(GL_COLOR_BUFFER_BIT); 
 
@@ -392,30 +581,33 @@ int main()
 
         drawElevator(elevatorShader, VAOelevator);
 
+        buttons.clear();
+
         float col1 = -0.85f;
         float col2 = -0.65f;
 
         float yTop = 0.60f;
         float dy = -0.25f;
 
-        drawButton(suTexture, col1, yTop, panelShader, buttonVAO);
-        drawButton(prTexture, col2, yTop, panelShader, buttonVAO);
+        int id = 0;
 
-        drawButton(firstTexture, col1, yTop + dy, panelShader, buttonVAO);
-        drawButton(secondTexture, col2, yTop + dy, panelShader, buttonVAO);
+        addButton(col1, yTop, id++);  drawButton(suTexture, col1, yTop, panelShader, buttonVAO);
+        addButton(col2, yTop, id++);  drawButton(prTexture, col2, yTop, panelShader, buttonVAO);
 
-        drawButton(thirdTexture, col1, yTop + 2 * dy, panelShader, buttonVAO);
-        drawButton(fourthTexture, col2, yTop + 2 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + dy, id++);  drawButton(firstTexture, col1, yTop + dy, panelShader, buttonVAO);
+        addButton(col2, yTop + dy, id++);  drawButton(secondTexture, col2, yTop + dy, panelShader, buttonVAO);
 
-        drawButton(fifthTexture, col1, yTop + 3 * dy, panelShader, buttonVAO);
-        drawButton(sixthTexture, col2, yTop + 3 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 2 * dy, id++); drawButton(thirdTexture, col1, yTop + 2 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 2 * dy, id++); drawButton(fourthTexture, col2, yTop + 2 * dy, panelShader, buttonVAO);
 
- 
-        drawButton(openTexture, col1, yTop + 4 * dy, panelShader, buttonVAO);
-        drawButton(closeTexture, col2, yTop + 4 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 3 * dy, id++); drawButton(fifthTexture, col1, yTop + 3 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 3 * dy, id++); drawButton(sixthTexture, col2, yTop + 3 * dy, panelShader, buttonVAO);
 
-        drawButton(stopTexture, col1, yTop + 5 * dy, panelShader, buttonVAO);
-        drawButton(ventTexture, col2, yTop + 5 * dy, panelShader, buttonVAO);
+        addButton(col1, yTop + 4 * dy, id++); drawButton(openTexture, col1, yTop + 4 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 4 * dy, id++); drawButton(closeTexture, col2, yTop + 4 * dy, panelShader, buttonVAO);
+
+        addButton(col1, yTop + 5 * dy, id++); drawButton(stopTexture, col1, yTop + 5 * dy, panelShader, buttonVAO);
+        addButton(col2, yTop + 5 * dy, id++); drawButton(ventTexture, col2, yTop + 5 * dy, panelShader, buttonVAO);
 
         drawLine(LEFT_VERTICAL_LINE_X, 0.0f, LINE_THICKNESS, 1.0f, lineShader, lineVAO);
 
