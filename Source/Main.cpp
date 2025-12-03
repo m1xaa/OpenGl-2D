@@ -289,7 +289,8 @@ void move_doors() {
 
 
 void move_elevator() {
-    if (elevatorFlats.empty()) {
+
+    if (elevatorFlats.empty() || doorState != DOORS_CLOSED) {
         elevatorMoving = false;
         return;
     }
@@ -336,10 +337,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        if (!person_in_elevator && doorState == DOORS_CLOSED) {
+        if (!person_in_elevator && doorState == DOORS_CLOSED && uX == compute_person_right_x_boundary()) {
             if (elevator_current_flat != person_current_flat) {
-                if (uX == compute_person_right_x_boundary())
-                    elevatorFlats.push(person_current_flat);
+                elevatorFlats.push(person_current_flat);
             }
             else {
                 doorState = DOORS_OPENING;
@@ -368,7 +368,7 @@ void handle_button_click(int id)
     case 8: // OPEN
         if (doorState == DOORS_CLOSED) doorState = DOORS_OPENING;
         else if (doorState == DOORS_OPEN && !doorExtendedOnce) {
-            doorOpenDuration += 5;
+            doorOpenStart = glfwGetTime();
             doorExtendedOnce = true;
         }
         break;
