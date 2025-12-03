@@ -124,15 +124,49 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Draw.cpp" />
+    <ClCompile Include="FormVAO.cpp" />
+    <ClCompile Include="Helper.cpp" />
     <ClCompile Include="Source\Main.cpp" />
     <ClCompile Include="Source\Util.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Draw.h" />
+    <ClInclude Include="FormVAO.h" />
     <ClInclude Include="Header\stb_image.h" />
     <ClInclude Include="Header\Util.h" />
+    <ClInclude Include="Helper.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="elevator.frag" />
+    <None Include="elevator.vert" />
+    <None Include="index.frag" />
+    <None Include="index.vert" />
+    <None Include="line.frag" />
+    <None Include="line.vert" />
     <None Include="packages.config" />
+    <None Include="panel.frag" />
+    <None Include="panel.vert" />
+    <None Include="person.frag" />
+    <None Include="person.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\-1.png" />
+    <Image Include="Resources\0.png" />
+    <Image Include="Resources\1.png" />
+    <Image Include="Resources\2.png" />
+    <Image Include="Resources\3.png" />
+    <Image Include="Resources\4.png" />
+    <Image Include="Resources\5.png" />
+    <Image Include="Resources\6.png" />
+    <Image Include="Resources\close.png" />
+    <Image Include="Resources\colored_cursor.png" />
+    <Image Include="Resources\glisa.png" />
+    <Image Include="Resources\name.png" />
+    <Image Include="Resources\normal_cursor.png" />
+    <Image Include="Resources\open.png" />
+    <Image Include="Resources\stop.jpg" />
+    <Image Include="Resources\vent.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
