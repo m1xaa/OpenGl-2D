@@ -30,14 +30,16 @@ float compute_person_left_x_boundary(
     float LEFT_VERTICAL_LINE_X,
     float PERSON_WIDTH, 
     bool person_in_elevator, 
-    float RIGHT_VERTICAL_LINE_X
+    float RIGHT_VERTICAL_LINE_X,
+    bool sameFlat
 );
 
 float compute_person_right_x_boundary(
     DoorState doorState,
     float PERSON_WIDTH,
     bool person_in_elevator,
-    float RIGHT_VERTICAL_LINE_X
+    float RIGHT_VERTICAL_LINE_X,
+    bool sameFlat
 );
 
 void limitFPS(double& last_time_for_refresh);

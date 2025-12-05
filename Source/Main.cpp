@@ -140,6 +140,9 @@ void move_elevator(GLFWwindow* window) {
     if (fabs(uY - targetY) < 0.0001f) {
         uY = targetY;
         elevator_current_flat = elevatorTargetFlat;
+        if (person_in_elevator) {
+            person_current_flat = elevator_current_flat;
+        }
         elevatorFlats.pop();
         elevatorMoving = false;
         if (ventilationOn) {
@@ -158,7 +161,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 
     if (key == GLFW_KEY_C && action == GLFW_PRESS) {
-        if (!person_in_elevator && doorState == DOORS_CLOSED && uX == compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X)) {
+        if (!person_in_elevator && doorState == DOORS_CLOSED && uX == compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X, person_current_flat == elevator_current_flat)) {
             if (elevator_current_flat != person_current_flat) {
                 elevatorFlats.push(person_current_flat);
             }
@@ -210,6 +213,7 @@ void handle_button_click(int id, GLFWwindow* window)
 
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+
     if (!person_in_elevator) {
         return;
     }
@@ -379,12 +383,12 @@ int main()
             uX += 0.005f;
         }
 
-        float right_bounadry = compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X);
-        float left_boundary = compute_person_left_x_boundary(doorState, LEFT_VERTICAL_LINE_X, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X);
+        float right_bounadry = compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X, person_current_flat == elevator_current_flat);
+        float left_boundary = compute_person_left_x_boundary(doorState, LEFT_VERTICAL_LINE_X, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X, person_current_flat == elevator_current_flat);
         if (uX > right_bounadry) uX = right_bounadry;
         if (uX < left_boundary) uX = left_boundary;
 
-        if (doorState == DOORS_OPEN) {
+        if (doorState == DOORS_OPEN && person_current_flat == elevator_current_flat) {
 
 
             if (uX > RIGHT_VERTICAL_LINE_X && !person_in_elevator) {
