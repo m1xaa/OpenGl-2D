@@ -17,34 +17,35 @@ float compute_person_left_x_boundary(
     float LEFT_VERTICAL_LINE_X,
     float PERSON_WIDTH,
     bool person_in_elevator,
-    float RIGHT_VERTICAL_LINE_X
+    float RIGHT_VERTICAL_LINE_X,
+    bool sameFlat
 ) {
-    if (doorState == DOORS_OPEN) {
-        return LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
+    float correction = PERSON_WIDTH / 2 - 0.05f;
+    if (person_in_elevator && doorState != DOORS_OPEN) {
+        return RIGHT_VERTICAL_LINE_X + correction;
     }
-    if (!person_in_elevator) {
-        return LEFT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
-    }
-    else {
-        return RIGHT_VERTICAL_LINE_X + PERSON_WIDTH / 2 - 0.05f;
-    }
+
+    return LEFT_VERTICAL_LINE_X + correction;
+
 }
 
 float compute_person_right_x_boundary(
     DoorState doorState,
     float PERSON_WIDTH,
     bool person_in_elevator,
-    float RIGHT_VERTICAL_LINE_X
+    float RIGHT_VERTICAL_LINE_X,
+    bool sameFlat
 ) {
-    if (doorState == DOORS_OPEN) {
-        return 1.0f - PERSON_WIDTH / 2 + 0.05f;
+    float correction = PERSON_WIDTH / 2 - 0.05f;
+    if (!sameFlat) {
+        return RIGHT_VERTICAL_LINE_X - correction;
     }
-    if (person_in_elevator) {
-        return 1.0f - PERSON_WIDTH / 2 + 0.05f;
+    
+    if (person_in_elevator || doorState == DOORS_OPEN) {
+        return 1.0f - correction;
     }
-    else {
-        return RIGHT_VERTICAL_LINE_X - PERSON_WIDTH / 2 + 0.05f;
-    }
+
+    return RIGHT_VERTICAL_LINE_X - correction;
 }
 
 void limitFPS(double& lastTimeForRefresh)
