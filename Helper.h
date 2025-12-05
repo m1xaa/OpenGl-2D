@@ -2,6 +2,8 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <chrono>
+#include <thread>
 
 #include <vector>
 
@@ -38,4 +40,4 @@ float compute_person_right_x_boundary(
     float RIGHT_VERTICAL_LINE_X
 );
 
-void limitFPS(double last_time_for_refresh);
+void limitFPS(double& last_time_for_refresh);

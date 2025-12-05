@@ -18,8 +18,7 @@
 #define PERSON_HEIGHT 0.8f * FLAT_HEIGHT
 #define PERSON_WIDTH 0.2f
 #define PERSON_START_X 0.0f
-#define PERSON_START_Y -1.0f + 2*LINE_THICKNESS + FLAT_HEIGHT
-#define ELEVATOR_SPEED 0.0005f
+#define ELEVATOR_SPEED 0.005f
 
 
 unsigned int indexTexture;
@@ -34,7 +33,7 @@ bool elevatorMoving = false;
 int elevatorTargetFlat = -1;
 
 float uX = 0.0f;
-float personuY = -3 * FLAT_HEIGHT + PERSON_HEIGHT;
+float personuY = -3 * FLAT_HEIGHT + PERSON_HEIGHT - 2*LINE_THICKNESS;
 float uY = -FLAT_HEIGHT;
 float elevatorX = RIGHT_VERTICAL_LINE_X;
 
@@ -43,7 +42,7 @@ bool person_in_elevator = false;
 DoorState doorState = DOORS_CLOSED;
 
 float doorsuY = 0.0f;        
-float DOOR_SPEED = 0.0007f;     
+float DOOR_SPEED = 0.005f;     
 float doorOpenStart = 0.0f;    
 float doorOpenDuration = 5.0f; 
 bool doorExtendedOnce = false;
@@ -373,11 +372,11 @@ int main()
         move_doors();
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         {
-            uX -= 0.001f;
+            uX -= 0.005f;
         }
         if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         {
-            uX += 0.001f;
+            uX += 0.005f;
         }
 
         float right_bounadry = compute_person_right_x_boundary(doorState, PERSON_WIDTH, person_in_elevator, RIGHT_VERTICAL_LINE_X);
