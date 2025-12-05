@@ -47,7 +47,7 @@ float compute_person_right_x_boundary(
     }
 }
 
-void limitFPS(double lastTimeForRefresh)
+void limitFPS(double& lastTimeForRefresh)
 {
     double now = glfwGetTime();
     double targetFrameTime = 1.0 / FPS;
@@ -55,7 +55,7 @@ void limitFPS(double lastTimeForRefresh)
 
     if (remaining > 0.0)
     {
-        glfwWaitEventsTimeout(remaining);
+        std::this_thread::sleep_for(std::chrono::duration<double>(remaining));
     }
     else
     {
